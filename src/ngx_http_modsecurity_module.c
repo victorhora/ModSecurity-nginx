@@ -252,6 +252,13 @@ ngx_http_modsecurity_create_ctx(ngx_http_request_t *r)
     dd("creating transaction with the following rules: '%p' -- ms: '%p'", loc_cf->rules_set, cf->modsec);
 
     if (loc_cf->transaction_id) {
+        const char *who_is_modsec = msc_who_am_i(cf->modsec);
+        const char *supported_ver = "ModSecurity v3.0.3";
+        int ver = strverscmp(who_is_modsec, supported_ver);
+        if (ver && ver < 0) {
+            ngx_log_error(NGX_LOG_NOTICE, (ngx_log_t *)r->connection->log, 0, "Warning: modsecurity_transaction_id directive requires at least %s. You are running %s. Please upgrade or disable.", supported_ver, who_is_modsec);
+            return NULL;
+        }
         if (ngx_http_complex_value(r, loc_cf->transaction_id, &s) != NGX_OK) {
             return NGX_CONF_ERROR;
         }
